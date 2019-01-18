@@ -1,47 +1,50 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Xamarin.Forms;
+using Xamarin.Forms.PlatformConfiguration.iOSSpecific;
 using XF.Material.Forms.Resources;
+using NavigationPage = Xamarin.Forms.NavigationPage;
+using Page = Xamarin.Forms.Page;
 
 namespace XF.Material.Forms.UI
 {
     /// <summary>
-    /// A <see cref="NavigationPage"/> that applies Material theming to a page.
+    /// A <see cref="Xamarin.Forms.NavigationPage"/> that applies Material theming to a page.
     /// </summary>
     public class MaterialNavigationPage : NavigationPage
     {
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine the app bar color.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine the app bar color.
         /// </summary>
         public static readonly BindableProperty AppBarColorProperty = BindableProperty.Create("AppBarColor", typeof(Color), typeof(MaterialNavigationPage), Color.Default);
 
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine the app bar text alignment.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine the app bar text alignment.
         /// </summary>
         public static readonly BindableProperty AppBarTitleTextAlignmentProperty = BindableProperty.Create("AppBarTitleTextAlignment", typeof(TextAlignment), typeof(MaterialNavigationPage), TextAlignment.Start);
 
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine the app bar title text color.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine the app bar title text color.
         /// </summary>
         public static readonly BindableProperty AppBarTitleTextColorProperty = BindableProperty.Create("AppBarTitleTextColor", typeof(Color), typeof(MaterialNavigationPage), Color.Default);
 
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine the app bar title text font family.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine the app bar title text font family.
         /// </summary>
         public static readonly BindableProperty AppBarTitleTextFontFamilyProperty = BindableProperty.Create("AppBarTitleTextFontFamily", typeof(string), typeof(MaterialNavigationPage));
 
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine the app bar title text font family.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine the app bar title text font family.
         /// </summary>
         public static readonly BindableProperty AppBarTitleTextFontSizeProperty = BindableProperty.Create("AppBarTitleTextFontSize", typeof(double), typeof(MaterialNavigationPage), 24.0);
 
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine whether the app bar will draw a shadow.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine whether the app bar will draw a shadow.
         /// </summary>
         public static readonly BindableProperty HasShadowProperty = BindableProperty.Create("HasShadow", typeof(bool), typeof(MaterialNavigationPage), true);
 
         /// <summary>
-        /// Attached property that is used by <see cref="Page"/>s to determine the status bar color.
+        /// Attached property that is used by <see cref="Xamarin.Forms.Page"/>s to determine the status bar color.
         /// </summary>
         public static readonly BindableProperty StatusBarColorProperty = BindableProperty.Create("StatusBarColor", typeof(Color), typeof(MaterialNavigationPage), Color.Default);
 
@@ -332,35 +335,54 @@ namespace XF.Material.Forms.UI
                 fontFamily = Material.FontFamily.H6;
             }
 
-            _customTitleView = new TitleLabel();
+            var showCustomTitleView = true;
 
-            if (Device.RuntimePlatform == Device.iOS)
+            var prefersLargeTitles =
+                Xamarin.Forms.PlatformConfiguration.iOSSpecific.NavigationPage.GetPrefersLargeTitles(this);
+
+            var largeTitles =
+                Xamarin.Forms.PlatformConfiguration.iOSSpecific.Page.LargeTitleDisplay(
+                    page.On<Xamarin.Forms.PlatformConfiguration.iOS>());
+
+            if (prefersLargeTitles && largeTitles == LargeTitleDisplayMode.Always || largeTitles == LargeTitleDisplayMode.Automatic)
             {
-                if (this.Navigation.NavigationStack.Count == 1)
-                {
-                    _customTitleView.Margin = new Thickness(8, 0, 8, 0);
-                }
-                else
-                {
-                    _customTitleView.Margin = new Thickness(8, 0, 32, 0);
-                }
+                showCustomTitleView = false;
             }
 
-            if (Device.RuntimePlatform == Device.Android && this.Navigation.NavigationStack.Count > 1 && page.ToolbarItems.Count == 0)
+
+            if (showCustomTitleView)
             {
-                _customTitleView.Margin = new Thickness(0, 0, 72, 0);
+                _customTitleView = new TitleLabel();
+
+                if (Device.RuntimePlatform == Device.iOS)
+                {
+                    if (this.Navigation.NavigationStack.Count == 1)
+                    {
+                        _customTitleView.Margin = new Thickness(8, 0, 8, 0);
+                    }
+                    else
+                    {
+                        _customTitleView.Margin = new Thickness(8, 0, 32, 0);
+                    }
+                }
+
+                if (Device.RuntimePlatform == Device.Android && this.Navigation.NavigationStack.Count > 1 &&
+                    page.ToolbarItems.Count == 0)
+                {
+                    _customTitleView.Margin = new Thickness(0, 0, 72, 0);
+                }
+
+                page.SetValue(TitleViewProperty, _customTitleView);
+
+                _customTitleView.VerticalTextAlignment = TextAlignment.Center;
+                _customTitleView.VerticalOptions = LayoutOptions.FillAndExpand;
+                _customTitleView.HorizontalOptions = LayoutOptions.FillAndExpand;
+                _customTitleView.HorizontalTextAlignment = textAlignment;
+                _customTitleView.SetDynamicResource(StyleProperty, "Material.TypeScale.H6");
+                _customTitleView.FontFamily = fontFamily;
+                _customTitleView.FontSize = fontSize;
+                _customTitleView.Text = page.Title;
             }
-
-            page.SetValue(TitleViewProperty, _customTitleView);
-
-            _customTitleView.VerticalTextAlignment = TextAlignment.Center;
-            _customTitleView.VerticalOptions = LayoutOptions.FillAndExpand;
-            _customTitleView.HorizontalOptions = LayoutOptions.FillAndExpand;
-            _customTitleView.HorizontalTextAlignment = textAlignment;
-            _customTitleView.SetDynamicResource(StyleProperty, "Material.TypeScale.H6");
-            _customTitleView.FontFamily = fontFamily;
-            _customTitleView.FontSize = fontSize;
-            _customTitleView.Text = page.Title;
         }
 
         private void ChangeStatusBarColor(Page page)
